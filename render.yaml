@@ -4,7 +4,6 @@ services:
     env: python
     buildCommand: |
       pip install -r backend/requirements.txt
-      cd frontend && npm install && npm run build && cd ..
       alembic upgrade head
       python3 -c "from backend.app.database import SessionLocal; from backend.app.models.user import User; from backend.app.services.seeder import seed_database; db = SessionLocal(); seed_database(db) if db.query(User).count() == 0 else None; db.close()"
     startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
@@ -12,8 +11,6 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
-      - key: NODE_VERSION
-        value: 20.12.2
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
