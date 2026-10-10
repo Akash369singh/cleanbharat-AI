@@ -1,0 +1,16 @@
+{
+  "name": "cleanbharat-ai-root",
+  "version": "1.0.0",
+  "description": "SmartRoute AI — Clean Bharat Intelligence Platform",
+  "scripts": {
+    "dev:backend": "PYTHONPATH=. python3 -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "dev:frontend": "cd frontend && npm run dev -- --port 5173",
+    "dev:all": "./start.sh",
+    "test:backend": "PYTHONPATH=. pytest backend/tests -v",
+    "test:frontend": "cd frontend && npm run build && npm run lint",
+    "start": "./start.sh",
+    "seed": "PYTHONPATH=. python3 -c \"from backend.app.database import SessionLocal; from backend.app.services.seeder import seed_database; db = SessionLocal(); seed_database(db); db.close(); print('Seed completed successfully.')\""
+  },
+  "author": "SmartRoute AI Team",
+  "license": "Apache-2.0"
+}
