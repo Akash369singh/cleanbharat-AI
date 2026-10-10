@@ -1,4 +1,15 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '');
+  }
+  // Connect directly to FastAPI on localhost:8000 when running in browser to prevent dev-server proxy failure
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return `http://${window.location.hostname}:8000/api`;
+  }
+  return '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   status: number;
@@ -26,10 +37,35 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers
+      });
+    } catch (fetchErr) {
+      // Fallback: If initial URL failed (e.g. proxy dropped connection), try direct localhost:8000
+      if (!url.includes(':8000') && typeof window !== 'undefined') {
+        const directUrl = `http://127.0.0.1:8000/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        response = await fetch(directUrl, { ...options, headers });
+      } else {
+        throw fetchErr;
+      }
+    }
+
+    // Fallback on 502/504 Bad Gateway from proxy
+    if ((response.status === 502 || response.status === 504) && !url.includes(':8000') && typeof window !== 'undefined') {
+      try {
+        const directUrl = `http://127.0.0.1:8000/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        const retryRes = await fetch(directUrl, { ...options, headers });
+        if (retryRes.ok) {
+          if (retryRes.status === 204) return {} as T;
+          return await retryRes.json();
+        }
+      } catch {
+        // Continue with original response error
+      }
+    }
 
     if (!response.ok) {
       let errorMsg = `Server error (${response.status})`;

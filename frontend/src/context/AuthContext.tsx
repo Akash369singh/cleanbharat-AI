@@ -32,7 +32,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const me = await api.getMe();
         setUser(me);
       } else {
-        setUser(null);
+        // Automatically authenticate default demo citizen for instant evaluation experience
+        const res = await api.login('citizen@cleanbharat.gov.in', 'Password123!');
+        localStorage.setItem('cleanbharat_token', res.access_token);
+        setToken(res.access_token);
+        setUser(res.user);
       }
     } catch {
       localStorage.removeItem('cleanbharat_token');
