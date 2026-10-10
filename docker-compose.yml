@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  cleanbharat-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cleanbharat-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=sqlite:///./cleanbharat.db
+      - SECRET_KEY=clean-bharat-hackathon-2026-super-secret-key-change-in-prod
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/backend/uploads
+    restart: unless-stopped
